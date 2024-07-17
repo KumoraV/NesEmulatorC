@@ -24,5 +24,4 @@ class Bus
         cpu6502 cpu;
         // 64KB RAM
         std::array<uint8_t, 64 * 1024> ram;
-
 };

@@ -2,7 +2,6 @@
 #include "cpu6502.h"
 #include "Bus.h"
 
-
 // Constructor
 cpu6502::cpu6502()
 {
