@@ -16,7 +16,10 @@ class cpu6502
         ~cpu6502();
 
         // Connect CPU to bus
-        void ConnectBus(Bus *n) { bus = n; }
+        void ConnectBus(Bus *n) 
+        { 
+            bus = n; 
+        }
 
         //~~~~~~~~~~~~~~~~~~~~~~~~
         // Registers
