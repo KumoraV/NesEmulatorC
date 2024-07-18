@@ -50,7 +50,7 @@ void cpu6502::write(uint16_t addr, uint8_t data)
 }
 
 // TO DO:
-// Implement set flag function
+// Implement set flag function and get flag function
 
 // Clock function to CPU 6502 that does not return anything.
 void cpu6502::clock()
@@ -301,7 +301,7 @@ uint8_t cpu6502::IND()
 // Indirect X
 uint8_t cpu6502::IZX()
 {
-    uint16_t t = read(pc); 
+    uint16_t t = read(pc);
     pc++;
 
     uint16_t lo = read((uint16_t)(t + (uint16_t)x) & 0x00FF); 
@@ -335,13 +335,14 @@ uint8_t cpu6502::IZY()
 }
 
 // Relative
+// Used for branching instructions with addresses -128 to +127 bytes away from the program counter
 uint8_t cpu6502::REL()
 {
     addr_rel = read(pc); 
     pc++;
-    if (addr_rel & 0x80)
+    if (addr_rel & 0x80) // If the address is negative, by checking the 7th bit
     {
-        addr_rel |= 0xFF00;
+        addr_rel |= 0xFF00; // Set the high byte to 0xFF (all 1s)
     }
     return 0;
 }
@@ -351,14 +352,14 @@ uint8_t cpu6502::REL()
 // https://www.princeton.edu/~mae412/HANDOUTS/Datasheets/6502.pdf (Page 23)
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-// Fetch
+// Fetch data for the instruction
 uint8_t cpu6502::fetch()
 {
-    if (!(lookup[opcode].addrmode == &cpu6502::IMP))
+    if (!(lookup[opcode].addrmode == &cpu6502::IMP)) // If the addressing mode is not implied, because there is no data to fetch
     {
-        fetched = read(addr_abs);
+        fetched = read(addr_abs); // Fetch data from the absolute address
     }
-    return fetched;
+    return fetched; // Return the fetched data
 }
 
 //Add Memory to Accumulator with Carry
@@ -377,8 +378,8 @@ uint8_t cpu6502::AND()
 {
     fetch(); // Fetch data
     a = a & fetched; // Perform AND operation
-    SetFlag(N, a & 0x80); // Set negative flag 
-    SetFlag(Z, a == 0x00); // Set zero flag
+    SetFlag(N, a & 0x80); // Set negative flag if the 7th bit is set
+    SetFlag(Z, a == 0x00); // Set zero flag if the result is 0
     return 1; // Return 1 cycle
 }
 
@@ -387,9 +388,9 @@ uint8_t cpu6502::ASL()
 {
     fetch(); // Fetch data
     uint16_t temp = (uint16_t)fetched << 1; // Shift left by 1
-    SetFlag(C, (temp & 0xFF00) > 0); // Set carry flag
-    SetFlag(Z, (temp & 0x00FF) == 0x00); // Set zero flag
-    SetFlag(N, temp & 0x80); // Set negative flag
+    SetFlag(C, (temp & 0xFF00) > 0); // Set carry flag if the 9th bit is set
+    SetFlag(Z, (temp & 0x00FF) == 0x00); // Set zero flag if the result is 0
+    SetFlag(N, temp & 0x80); // Set negative flag if the 7th bit is set
 
     if (lookup[opcode].addrmode == &cpu6502::IMP)
     {
