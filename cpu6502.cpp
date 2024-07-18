@@ -49,6 +49,9 @@ void cpu6502::write(uint16_t addr, uint8_t data)
     bus->write(addr, data);
 }
 
+// TO DO:
+// Implement set flag function
+
 // Clock function to CPU 6502 that does not return anything.
 void cpu6502::clock()
 {
@@ -180,56 +183,66 @@ uint8_t cpu6502::IMM()
 }
 
 // Zero page
+/**
+ * Zero Page addressing mode.
+ * 
+ * This addressing mode uses a single byte operand that represents a zero page address.
+ * The address is obtained from the program counter (PC) and stored in the `addr_abs` variable.
+ * The PC is then incremented by one.
+ * The lower 8 bits of the `addr_abs` are masked with 0x00FF to ensure it stays within the zero page range.
+ * 
+ * @return The value 0.
+ */
 uint8_t cpu6502::ZP0()
 {
-    addr_abs = read(pc); 
-    pc++;
-    addr_abs &= 0x00FF; 
+    addr_abs = read(pc); // Get address from PC and store in addr_abs
+    pc++; // Increment PC
+    addr_abs &= 0x00FF;  // Get the second byte of the address by masking with 0x00FF
     return 0;
 }
 
 // Zero page with X offset
 uint8_t cpu6502::ZPX()
 {
-    addr_abs = (read(pc) + x); 
-    pc++;
-    addr_abs &= 0x00FF; 
+    addr_abs = (read(pc) + x); // Get address from PC and add X register
+    pc++; // Increment PC
+    addr_abs &= 0x00FF; // Get the second byte of the address by masking with 0x00FF
     return 0;
 }
 
 // Zero page with Y offset
 uint8_t cpu6502::ZPY()
 {
-    addr_abs = (read(pc) + y); 
-    pc++;
-    addr_abs &= 0x00FF; 
+    addr_abs = (read(pc) + y); // Get address from PC and add Y register
+    pc++; // Increment PC
+    addr_abs &= 0x00FF; // Get the second byte of the address by masking with 0x00FF
     return 0;
 }
 
 // Absolute
 uint8_t cpu6502::ABS()
 {
-    uint16_t lo = read(pc); 
-    pc++;
-    uint16_t hi = read(pc); 
-    pc++;
+    uint16_t lo = read(pc); // Get low byte of address
+    pc++; // Increment PC
+    uint16_t hi = read(pc); // Get high byte of address
+    pc++; // Increment PC
 
-    addr_abs = (hi << 8) | lo; 
+    addr_abs = (hi << 8) | lo; // Combine high and low bytes to get full address
     return 0;
 }
 
 // Absolute with X offset
 uint8_t cpu6502::ABX()
 {
-    uint16_t lo = read(pc); 
-    pc++;
-    uint16_t hi = read(pc); 
-    pc++;
+    uint16_t lo = read(pc); // Get low byte of address
+    pc++; // Increment PC
+    uint16_t hi = read(pc); // Get high byte of address
+    pc++; // Increment PC
 
-    addr_abs = (hi << 8) | lo; 
-    addr_abs += x; 
+    addr_abs = (hi << 8) | lo; // Combine high and low bytes to get full address
+    addr_abs += x; // Add X register to address
 
-    if ((addr_abs & 0xFF00) != (hi << 8))
+    if ((addr_abs & 0xFF00) != (hi << 8)) // If the address crosses a page boundary, return 1 cycle
     {
         return 1;
     }
@@ -260,23 +273,26 @@ uint8_t cpu6502::ABY()
     }
 }
 
-// Indirect
+// Indirect : Address is read to get the address of the actual data
 uint8_t cpu6502::IND()
 {
-    uint16_t ptr_lo = read(pc); 
+    uint16_t ptr_lo = read(pc); // Get low byte of pointer
     pc++;
-    uint16_t ptr_hi = read(pc); 
+    uint16_t ptr_hi = read(pc); // Get high byte of pointer
     pc++;
 
-    uint16_t ptr = (ptr_hi << 8) | ptr_lo; 
+    uint16_t ptr = (ptr_hi << 8) | ptr_lo; // Combine high and low bytes to get full pointer
 
-    if (ptr_lo == 0x00FF) 
+    // Bug in original 6502 hardware
+    // If low byte is 0x00FF, to read the high byte you have to cross a page boundary.
+    // In the hardware, this does not happen. Instead it goes back to the same page.
+    if (ptr_lo == 0x00FF) // If low byte is 0x00FF
     {
-        addr_abs = (read(ptr & 0xFF00) << 8) | read(ptr + 0); 
+        addr_abs = (read(ptr & 0xFF00) << 8) | read(ptr + 0); // Get high byte from the same page
     }
     else 
     {
-        addr_abs = (read(ptr + 1) << 8) | read(ptr + 0); 
+        addr_abs = (read(ptr + 1) << 8) | read(ptr + 0); // Get high byte from the next page
     }
 
     return 0;
