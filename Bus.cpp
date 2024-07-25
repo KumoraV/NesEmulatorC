@@ -4,7 +4,6 @@
 // Constructor
 Bus::Bus()
 {
-    
     /* 
     Clear RAM
     In clearer terms, for each element in the RAM, set the actual value to 0x00. 
